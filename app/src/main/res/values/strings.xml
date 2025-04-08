@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CCM Conti</string>
+    <string name="title_activity_main">CCM Conti</string>
+    <string name="package_name">com.example.norizzang</string>
+    <string name="custom_url_scheme">com.example.norizzang</string>
+</resources>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle"> <!-- 사각형 -->
+    <solid android:color="#5A5BD5" /> <!-- 보라색 -->
+    <corners android:radius="10dp" /> <!-- 숫자가 클 수록 더 둥글 -->
+</shape>
