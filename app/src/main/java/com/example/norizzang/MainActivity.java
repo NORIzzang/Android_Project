@@ -4,18 +4,16 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import com.getcapacitor.BridgeActivity;
 import android.widget.FrameLayout;
 import android.view.Gravity;
+import android.widget.SeekBar;
 import android.view.ViewGroup;
 import android.view.View;
-import android.widget.TextView;
-import android.graphics.Color;
-import android.widget.Toast;
-import android.annotation.SuppressLint;
-import android.graphics.Typeface;
 import android.widget.ImageButton;
-
+import android.graphics.Color;
+import android.annotation.SuppressLint;
 
 public class MainActivity extends BridgeActivity {
     private WebView webView;
@@ -34,30 +32,82 @@ public class MainActivity extends BridgeActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // ✅ Capacitor WebView 연결
         webView = bridge.getWebView();
 
-        // ✅ 이미지 버튼 생성
-        ImageButton scrollToTopButton = new ImageButton(this);
-        scrollToTopButton.setImageResource(R.drawable.ic_scroll_top); // 넣은 이미지 연결
-        scrollToTopButton.setBackgroundColor(Color.TRANSPARENT); // 배경 제거
-        scrollToTopButton.setScaleType(ImageButton.ScaleType.FIT_CENTER); // 이미지 가운데 정렬
-        scrollToTopButton.setAdjustViewBounds(true); // 이미지 비율 유지
+        // ✅ 루트 뷰 (전체 뷰를 감싸는 FrameLayout)
+        FrameLayout rootView = (FrameLayout) getWindow().getDecorView().findViewById(android.R.id.content);
 
-        // ✅ 위치 설정
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
-                200, 200 // 버튼 크기
+        // ✅ 슬라이더 (SeekBar) 생성
+        SeekBar fontSizeSeekBar = new SeekBar(this);
+        fontSizeSeekBar.setMax(30);
+        fontSizeSeekBar.setProgress(16);
+        fontSizeSeekBar.setBackgroundColor(Color.LTGRAY);
+
+        // ✅ 처음엔 숨기기
+        fontSizeSeekBar.setVisibility(View.GONE);
+
+        // ✅ 슬라이더 Layout 설정 (상단 고정)
+        FrameLayout.LayoutParams seekBarParams = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
         );
-        params.gravity = Gravity.BOTTOM | Gravity.END;
-        params.setMargins(0, 0, 30, 80); // 오른쪽 하단 여백
+        seekBarParams.gravity = Gravity.TOP;
 
-        // ✅ 클릭 시 동작
+        // ✅ 슬라이더 이벤트
+        fontSizeSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                int fontSize = Math.max(progress, 10); // 최소 10px
+                String jsCode = "document.body.style.fontSize='" + fontSize + "px';";
+                webView.evaluateJavascript(jsCode, null);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {}
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+
+        // ✅ 슬라이더 추가
+        rootView.addView(fontSizeSeekBar, seekBarParams);
+
+        // ✅ 웹페이지 로딩 완료 시 슬라이더 보이기 + padding 추가
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+
+                // padding-top으로 슬라이더 공간 확보 (겹침 방지)
+                view.evaluateJavascript("document.body.style.paddingTop='22px';", null);
+
+                // 슬라이더 보이게 설정
+                fontSizeSeekBar.setVisibility(View.VISIBLE);
+            }
+        });
+
+        // ✅ 이미지 버튼 생성 (스크롤 상단 이동)
+        ImageButton scrollToTopButton = new ImageButton(this);
+        scrollToTopButton.setImageResource(R.drawable.ic_scroll_top); // drawable 폴더에 이미지 필요
+        scrollToTopButton.setBackgroundColor(Color.TRANSPARENT);
+        scrollToTopButton.setScaleType(ImageButton.ScaleType.FIT_CENTER);
+        scrollToTopButton.setAdjustViewBounds(true);
+
+        // ✅ 버튼 위치 (오른쪽 하단)
+        FrameLayout.LayoutParams buttonParams = new FrameLayout.LayoutParams(
+                200, 200
+        );
+        buttonParams.gravity = Gravity.BOTTOM | Gravity.END;
+        buttonParams.setMargins(0, 0, 30, 80);
+
+        // ✅ 버튼 동작
         scrollToTopButton.setOnClickListener(v -> {
             webView.evaluateJavascript("window.scrollTo({top: 0, behavior: 'smooth'});", null);
         });
 
         // ✅ 버튼 추가
-        FrameLayout rootView = (FrameLayout) getWindow().getDecorView().findViewById(android.R.id.content);
-        rootView.addView(scrollToTopButton, params);
+        rootView.addView(scrollToTopButton, buttonParams);
     }
 
     private void showExitConfirmation() {
@@ -69,11 +119,7 @@ public class MainActivity extends BridgeActivity {
                         finish(); // 앱 종료
                     }
                 })
-                .setNegativeButton("취소", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss(); // 팝업만 닫기
-                    }
-                })
+                .setNegativeButton("취소", (dialog, which) -> dialog.dismiss())
                 .setCancelable(true)
                 .show();
     }
