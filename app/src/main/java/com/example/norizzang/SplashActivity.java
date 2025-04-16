@@ -23,7 +23,7 @@ public class SplashActivity extends Activity {
                 startActivity(intent);
                 finish();
             }
-        }, 1000); // 1초 대기 후 전환
+        }, 2000); // 1초 대기 후 전환
     }
 
 }
