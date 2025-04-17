@@ -23,8 +23,7 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
 
-import androidx.core.content.ContextCompat;
-
+import com.google.firebase.analytics.FirebaseAnalytics;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
@@ -32,6 +31,9 @@ public class MainActivity extends BridgeActivity {
     private static final String PREF_NAME = "FontPrefs";
     private static final String KEY_FONT_SIZE = "fontSize";
     private int currentFontSize = 16;
+
+    // ✅ Firebase Analytics 선언
+    private FirebaseAnalytics mFirebaseAnalytics;
 
     @Override
     public void onBackPressed() {
@@ -45,9 +47,11 @@ public class MainActivity extends BridgeActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        webView = bridge.getWebView();
 
-        // ✅ JavaScript Bridge for printing
+        // ✅ Firebase Analytics 초기화
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
+
+        webView = bridge.getWebView();
         webView.getSettings().setJavaScriptEnabled(true);
         webView.addJavascriptInterface(new PrintBridge(this), "Android");
 
@@ -55,7 +59,6 @@ public class MainActivity extends BridgeActivity {
         SharedPreferences prefs = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
         currentFontSize = prefs.getInt(KEY_FONT_SIZE, 16);
 
-        // 🔹 Font Size Slider
         SeekBar fontSizeSeekBar = new SeekBar(this);
         fontSizeSeekBar.setMax(30);
         fontSizeSeekBar.setProgress(currentFontSize);
@@ -91,7 +94,6 @@ public class MainActivity extends BridgeActivity {
             @Override public void onStopTrackingTouch(SeekBar seekBar) {}
         });
 
-        // 🔹 Font Toggle Button
         ImageButton fontToggleButton = new ImageButton(this);
         fontToggleButton.setImageResource(R.drawable.ic_font_toggle);
         fontToggleButton.setBackgroundColor(Color.TRANSPARENT);
@@ -119,7 +121,6 @@ public class MainActivity extends BridgeActivity {
         fontLayoutParams.setMargins(0, 0, 30, 215);
         rootView.addView(fontControlLayout, fontLayoutParams);
 
-        // 🔹 Scroll-to-top button
         ImageButton scrollToTopButton = new ImageButton(this);
         scrollToTopButton.setImageResource(R.drawable.ic_scroll_top);
         scrollToTopButton.setBackgroundColor(Color.TRANSPARENT);
@@ -136,7 +137,6 @@ public class MainActivity extends BridgeActivity {
                 webView.evaluateJavascript("window.scrollTo({top: 0, behavior: 'smooth'});", null)
         );
 
-        // 🔹 WebView Load Events
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
@@ -155,12 +155,9 @@ public class MainActivity extends BridgeActivity {
                 view.evaluateJavascript("tryShowMain && tryShowMain();", null);
                 webView.setBackgroundColor(Color.TRANSPARENT);
 
-
                 fontToggleButton.setVisibility(View.VISIBLE);
                 scrollToTopButton.setVisibility(View.VISIBLE);
-                // ✅ WebView에서 JS 함수 호출: 로딩 화면 제거!
                 view.evaluateJavascript("if (typeof hideLoader === 'function') hideLoader();", null);
-
             }
 
             @Override
@@ -189,7 +186,6 @@ public class MainActivity extends BridgeActivity {
                 .show();
     }
 
-    // ✅ Print 기능을 위한 Bridge 클래스
     public static class PrintBridge {
         private final Context context;
 
@@ -205,9 +201,8 @@ public class MainActivity extends BridgeActivity {
                 printWebView.getSettings().setJavaScriptEnabled(true);
                 printWebView.getSettings().setUseWideViewPort(true);
                 printWebView.getSettings().setLoadWithOverviewMode(true);
-                printWebView.setInitialScale(100); // 정확히 100% 비율로 출력
+                printWebView.setInitialScale(100);
 
-                // HTML을 감싸는 스타일 적용 (강제 확대)
                 String wrappedHtml = "<html><head><meta name='viewport' content='width=device-width, initial-scale=1.0'>" +
                         "<style>" +
                         "body { margin:0; padding:0; font-size:16pt; width:100vw; max-width:100%; font-family:'Malgun Gothic', sans-serif; }" +
